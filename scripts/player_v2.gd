@@ -110,6 +110,21 @@ const WALK_CYCLE_SPEED: float = 15.0
 const PUNCH_RECOVERY: float = 0.3
 var punch_timer: float = 0.0
 
+# --- SHIELD & DODGE ---
+var shield_health: float = 100.0
+const SHIELD_MAX_HEALTH: float = 100.0
+const SHIELD_DEGRADE_RATE: float = 15.0  # Health lost per second while shielding
+const SHIELD_BREAK_STUN: float = 0.5  # Stun when shield breaks
+var is_shielding: bool = false
+var shield_node: ColorRect = null  # Visual shield
+
+var dodge_timer: float = 0.0
+const DODGE_DURATION: float = 0.25  # Invincibility frames
+const DODGE_COOLDOWN: float = 0.5
+var dodge_direction: float = 0.0  # -1 for left, 1 for right
+var last_down_press: float = 0.0
+const DOUBLE_TAP_WINDOW: float = 0.2  # Time between taps for double-tap
+
 # --- MOVEMENT STATE ---
 var was_on_floor: bool = false  # Track previous frame for coyote time
 var last_input_x: float = 0.0   # Track direction for pivot detection
@@ -149,6 +164,9 @@ func _ready():
 	# Initialize 3D model manager (replaces 2D visuals)
 	setup_3d_model()
 	
+	# Setup shield visuals
+	setup_shield()
+	
 	facing_right = (player_id == 2)
 	update_facing()
 
@@ -185,6 +203,16 @@ func setup_3d_model() -> void:
 		visuals.add_child(indicator)
 	
 	print("Player ", player_id, ": Enhanced 2D visuals ready")
+
+func setup_shield() -> void:
+	"""Create visual shield effect"""
+	shield_node = ColorRect.new()
+	shield_node.name = "ShieldVisual"
+	shield_node.color = Color(0.3, 0.6, 1.0, 0.5)  # Blue translucent
+	shield_node.size = Vector2(60, 80)
+	shield_node.position = Vector2(-30, -40)
+	shield_node.visible = false
+	add_child(shield_node)
 
 func update_model_animation(delta: float) -> void:
 	"""Procedurally animate the 3D model based on player state"""
@@ -309,6 +337,10 @@ func _physics_process(delta):
 			process_airborne(delta)
 		PlayerStateMachine.State.ATTACK_GROUND, PlayerStateMachine.State.ATTACK_AIR:
 			process_attack(delta)
+		PlayerStateMachine.State.SHIELD:
+			process_shield(delta)
+		PlayerStateMachine.State.DODGE:
+			process_dodge(delta)
 		PlayerStateMachine.State.HITSTUN:
 			process_hitstun(delta)
 		PlayerStateMachine.State.LANDING_LAG:
@@ -347,6 +379,10 @@ func process_idle(delta):
 		start_attack(attacks["jab"])
 		return
 	
+	# Try shield (hold S/down)
+	if try_shield():
+		return
+	
 	move_and_slide()
 	update_facing()
 
@@ -354,6 +390,10 @@ func process_run(delta):
 	apply_gravity(delta)
 	
 	var input_x = get_input_x()
+	
+	# Try shield first
+	if try_shield():
+		return
 	
 	# PREMIUM: Snappy pivot with speed boost
 	if input_x != 0 and sign(input_x) != sign(velocity.x) and abs(velocity.x) > 50:
@@ -414,6 +454,55 @@ func flash_visual_feedback(color: Color, duration: float) -> void:
 			await get_tree().create_timer(duration).timeout
 			if is_instance_valid(body):
 				body.color = original_color
+
+func process_shield(delta: float) -> void:
+	"""Shield state - blocks attacks but degrades over time"""
+	apply_gravity(delta)
+	velocity.x = move_toward(velocity.x, 0, GROUND_DECEL * delta)  # Slow movement
+	
+	# Degrade shield
+	shield_health -= SHIELD_DEGRADE_RATE * delta
+	
+	# Update shield visual size based on health
+	if shield_node:
+		var health_percent = shield_health / SHIELD_MAX_HEALTH
+		shield_node.modulate.a = health_percent * 0.5  # Fade as it weakens
+	
+	# Check for shield break
+	if shield_health <= 0:
+		shield_health = 0
+		shield_node.visible = false
+		is_shielding = false
+		state_machine.change_state(PlayerStateMachine.State.HITSTUN)
+		print("Player ", player_id, ": SHIELD BROKEN!")
+		return
+	
+	# Release shield if down input released
+	if not get_input_down_held():
+		is_shielding = false
+		shield_node.visible = false
+		state_machine.change_state(PlayerStateMachine.State.IDLE)
+		return
+	
+	move_and_slide()
+
+func process_dodge(delta: float) -> void:
+	"""Dodge/Roll state - invincible movement"""
+	apply_gravity(delta)
+	
+	# Continue dodge movement
+	velocity.x = dodge_direction * RUN_SPEED * 1.5
+	
+	# Update timer
+	dodge_timer -= delta
+	
+	# End dodge when timer expires
+	if dodge_timer <= 0:
+		velocity.x *= 0.3  # Slow down after dodge
+		state_machine.change_state(PlayerStateMachine.State.IDLE)
+		return
+	
+	move_and_slide()
 
 func process_jump_squat(delta):
 	# Deprecated - instant jump now handles this
@@ -808,7 +897,50 @@ func start_attack(attack):
 		state_machine.change_state(PlayerStateMachine.State.ATTACK_AIR)
 
 func get_input_down() -> bool:
+	var pressed = Input.is_action_just_pressed("p1_down") if player_id == 1 else Input.is_action_just_pressed("p2_down")
+	
+	if pressed:
+		var current_time = Time.get_time_dict_from_system()["second"]
+		if current_time - last_down_press < DOUBLE_TAP_WINDOW:
+			# Double tap detected - trigger dodge
+			trigger_dodge()
+			return false  # Don't process as shield
+		last_down_press = current_time
+	
+	return pressed
+
+func get_input_down_held() -> bool:
 	return Input.is_action_pressed("p1_down") if player_id == 1 else Input.is_action_pressed("p2_down")
+
+func trigger_dodge() -> void:
+	"""Initiate dodge/roll"""
+	if not is_on_floor() or dodge_timer > 0:
+		return
+	
+	# Determine dodge direction
+	var input_x = get_input_x()
+	if input_x != 0:
+		dodge_direction = sign(input_x)
+	else:
+		dodge_direction = 1 if facing_right else -1
+	
+	dodge_timer = DODGE_DURATION
+	state_machine.change_state(PlayerStateMachine.State.DODGE)
+	print("Player ", player_id, ": DODGE!")
+
+func try_shield() -> bool:
+	"""Attempt to start shielding"""
+	if not is_on_floor() or shield_health <= 0:
+		return false
+	
+	if get_input_down_held() and state_machine.current_state in [PlayerStateMachine.State.IDLE, PlayerStateMachine.State.RUN]:
+		is_shielding = true
+		shield_node.visible = true
+		state_machine.change_state(PlayerStateMachine.State.SHIELD)
+		print("Player ", player_id, ": SHIELD UP")
+		return true
+	
+	return false
 
 func _on_state_changed(new_state, old_state):
 	print("Player ", player_id, ": ", state_machine.get_state_name())
