@@ -689,7 +689,19 @@ func create_hit_effect(pos):
 	flash.queue_free()
 
 func create_double_jump_effect():
-	pass  # Placeholder for particle effect
+	"""Spawn particle effect on double jump"""
+	var vfx = get_node_or_null("/root/Main/VisualEffects")
+	if vfx:
+		vfx.spawn_landing_dust(global_position)  # Reuse landing dust for now
+
+func spawn_hit_visuals(attacker_position: Vector2, knockback: float):
+	"""Spawn hit particles and effects"""
+	var vfx = get_node_or_null("/root/Main/VisualEffects")
+	if vfx:
+		var hit_dir = (global_position - attacker_position).normalized()
+		vfx.spawn_hit_sparks(global_position, hit_dir.angle(), knockback / 1000.0)
+		vfx.spawn_hit_burst(global_position, knockback)
+		vfx.spawn_impact_lines(global_position, hit_dir.angle())
 
 func end_attack():
 	deactivate_hitbox()
@@ -725,10 +737,17 @@ func process_landing_lag(delta):
 	
 	if landing_lag_timer <= 0:
 		state_machine.change_state(PlayerStateMachine.State.IDLE)
+		spawn_landing_dust()
 		if DEBUG_MOVEMENT:
 			print("Player ", player_id, ": LANDING RECOVERY COMPLETE")
 	
 	move_and_slide()
+
+func spawn_landing_dust():
+	"""Spawn dust particles when landing"""
+	var vfx = get_node_or_null("/root/Main/VisualEffects")
+	if vfx:
+		vfx.spawn_landing_dust(global_position)
 
 func process_dead(delta):
 	visible = false
@@ -785,6 +804,10 @@ func take_damage(damage, knockback, angle, attacker):
 	# SCREEN SHAKE: Based on knockback strength
 	var shake_amount = min(knockback / 50.0, 12.0)
 	trigger_screen_shake(shake_amount)
+	
+	# PARTICLE EFFECTS: Hit sparks and burst
+	if attacker:
+		spawn_hit_visuals(attacker.global_position, knockback)
 	
 	print("  Player ", player_id, " took damage! KB=", knockback, " Angle=", angle)
 
