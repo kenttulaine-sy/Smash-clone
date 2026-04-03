@@ -19,7 +19,7 @@ func create_animated_sprite():
 	animated_sprite = AnimatedSprite2D.new()
 	animated_sprite.name = "AnimatedSprite2D"
 	animated_sprite.scale = Vector2(sprite_scale, sprite_scale)
-	animated_sprite.position = Vector2(0, -50)  # Offset so feet are at origin
+	animated_sprite.position = Vector2(0, -30)  # Offset so feet are at origin (adjusted for smaller scale)
 	add_child(animated_sprite)
 	
 	sprite_frames = SpriteFrames.new()

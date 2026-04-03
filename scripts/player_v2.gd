@@ -199,29 +199,33 @@ func find_opponent() -> void:
 func setup_3d_model() -> void:
 	"""Setup Tiny Swords warrior sprites using runtime loading"""
 	
-	# Hide old placeholder visuals
-	if visuals:
-		for child in visuals.get_children():
-			child.visible = false
+	# Remove any existing warrior sprites (prevents duplicates)
+	var existing = visuals.get_node_or_null("WarriorSprites")
+	if existing:
+		existing.queue_free()
 	
-	# Add warrior sprite loader
+	# Hide old placeholder visuals
+	for child in visuals.get_children():
+		child.visible = false
+	
+	# Add warrior sprite loader with proper scale
 	var warrior_script = load("res://scripts/warrior_sprite_loader.gd")
 	var warrior = Node2D.new()
 	warrior.name = "WarriorSprites"
 	warrior.set_script(warrior_script)
 	warrior.warrior_color = "blue" if player_id == 1 else "red"
-	warrior.sprite_scale = 3.0
+	warrior.sprite_scale = 1.5  # Reduced from 3.0 - proper size for platformer
 	visuals.add_child(warrior)
 	
 	print("Player ", player_id, ": Warrior sprites loading...")
 
 func setup_shield() -> void:
-	"""Create visual shield effect"""
+	"""Create visual shield effect - scaled for new sprite size"""
 	shield_node = ColorRect.new()
 	shield_node.name = "ShieldVisual"
 	shield_node.color = Color(0.3, 0.6, 1.0, 0.5)  # Blue translucent
-	shield_node.size = Vector2(60, 80)
-	shield_node.position = Vector2(-30, -40)
+	shield_node.size = Vector2(40, 50)  # Scaled down for 1.5x sprites
+	shield_node.position = Vector2(-20, -35)
 	shield_node.visible = false
 	add_child(shield_node)
 
