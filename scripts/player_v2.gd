@@ -197,27 +197,51 @@ func find_opponent() -> void:
 	print("Warning: Player ", player_id, " could not find opponent!")
 
 func setup_3d_model() -> void:
-	"""Use enhanced 2D visuals instead of problematic 3D"""
+	"""Setup warrior-style 2D visuals using existing ColorRect system"""
 	
-	# Keep 2D visuals but enhance them
 	if visuals:
-		visuals.visible = true
-		
-		# Make the body more visible
+		# Hide old placeholder body parts
 		var body = visuals.get_node_or_null("Body")
-		if body:
-			body.color = Color(0.2, 0.6, 1.0, 1.0) if player_id == 1 else Color(1.0, 0.3, 0.3, 1.0)
-			body.size = Vector2(50, 70)  # Slightly larger
+		var eye_left = visuals.get_node_or_null("EyeLeft")
+		var eye_right = visuals.get_node_or_null("EyeRight")
 		
-		# Add visual indicator for facing direction
-		var indicator = ColorRect.new()
-		indicator.name = "FacingIndicator"
-		indicator.color = Color(1, 1, 0, 1)  # Yellow arrow
-		indicator.size = Vector2(10, 10)
-		indicator.position = Vector2(25, -25)  # Right side
-		visuals.add_child(indicator)
+		if body:
+			# Warrior body shape - taller and slimmer
+			body.color = Color(0.2, 0.4, 0.8, 1.0) if player_id == 1 else Color(0.8, 0.2, 0.2, 1.0)
+			body.size = Vector2(35, 65)
+			body.position = Vector2(-17.5, -65)
+		
+		# Hide eyes for warrior look
+		if eye_left:
+			eye_left.visible = false
+		if eye_right:
+			eye_right.visible = false
+		
+		# Add warrior helmet/head
+		var helmet = ColorRect.new()
+		helmet.name = "Helmet"
+		helmet.color = Color(0.9, 0.8, 0.3, 1.0) if player_id == 1 else Color(0.7, 0.7, 0.7, 1.0)  # Gold or Silver
+		helmet.size = Vector2(30, 25)
+		helmet.position = Vector2(-15, -85)
+		visuals.add_child(helmet)
+		
+		# Add sword
+		var sword = ColorRect.new()
+		sword.name = "Sword"
+		sword.color = Color(0.9, 0.9, 1.0, 1.0)  # Silver sword
+		sword.size = Vector2(8, 40)
+		sword.position = Vector2(20, -55)  # Right side
+		visuals.add_child(sword)
+		
+		# Add sword handle
+		var handle = ColorRect.new()
+		handle.name = "SwordHandle"
+		handle.color = Color(0.4, 0.2, 0.1, 1.0)  # Brown
+		handle.size = Vector2(12, 8)
+		handle.position = Vector2(18, -20)
+		visuals.add_child(handle)
 	
-	print("Player ", player_id, ": Enhanced 2D visuals ready")
+	print("Player ", player_id, ": Warrior visuals setup complete")
 
 func setup_shield() -> void:
 	"""Create visual shield effect"""
@@ -272,6 +296,26 @@ func update_model_animation(delta: float) -> void:
 func trigger_punch_animation() -> void:
 	"""Trigger punch animation"""
 	punch_timer = PUNCH_RECOVERY
+
+func update_warrior_animation() -> void:
+	"""Update warrior sprite animation based on player state"""
+	var warrior = visuals.get_node_or_null("WarriorVisuals")
+	if not warrior:
+		return
+	
+	match state_machine.current_state:
+		PlayerStateMachine.State.IDLE:
+			if warrior.has_method("play_idle"):
+				warrior.play_idle()
+		PlayerStateMachine.State.RUN:
+			if warrior.has_method("play_run"):
+				warrior.play_run()
+		PlayerStateMachine.State.ATTACK_GROUND, PlayerStateMachine.State.ATTACK_AIR:
+			if warrior.has_method("play_attack") and not warrior.is_attacking:
+				warrior.play_attack()
+		PlayerStateMachine.State.SHIELD:
+			if warrior.has_method("play_guard"):
+				warrior.play_guard()
 
 func setup_hitbox_visuals() -> void:
 	# Visualize hitbox and hurtbox for debugging
@@ -339,6 +383,9 @@ func _physics_process(delta):
 	
 	# Update 3D model animation
 	update_model_animation(delta)
+	
+	# Update warrior animation based on state
+	update_warrior_animation()
 	
 	# State machine
 	match state_machine.current_state:
@@ -1002,10 +1049,10 @@ func update_facing():
 	# Update 2D visuals (hidden but kept for compatibility)
 	visuals.scale.x = 1 if facing_right else -1
 	
-	# Update 3D model sprite
-	var sprite = get_node_or_null("CharacterSprite3D")
-	if sprite:
-		sprite.flip_h = not facing_right  # Flip horizontally
+	# Update warrior visuals
+	var warrior = visuals.get_node_or_null("WarriorVisuals")
+	if warrior and warrior.has_method("set_facing_right"):
+		warrior.set_facing_right(facing_right)
 
 # === INPUT FUNCTIONS ===
 func get_input_x() -> float:
