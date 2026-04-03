@@ -1,0 +1,230 @@
+[gd_scene format=3 uid="uid://b2m3d8qv1s4n5"]
+
+[ext_resource type="Script" uid="uid://yita3sxotxt7" path="res://scripts/player.gd" id="1_player"]
+[ext_resource type="Script" uid="uid://bydg01py4q6c2" path="res://scripts/camera.gd" id="2_camera"]
+[ext_resource type="Script" uid="uid://bgxdswg22ulsm" path="res://scripts/hud.gd" id="3_hud"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground"]
+size = Vector2(1200, 50)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_platform"]
+size = Vector2(300, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
+size = Vector2(40, 60)
+
+[node name="Main" type="Node2D" unique_id=84941024]
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=239669245]
+position = Vector2(960, 540)
+script = ExtResource("2_camera")
+
+[node name="Stage" type="Node2D" parent="." unique_id=799087910]
+
+[node name="MainPlatform" type="StaticBody2D" parent="Stage" unique_id=533989270]
+position = Vector2(960, 800)
+
+[node name="ColorRect" type="ColorRect" parent="Stage/MainPlatform" unique_id=48554034]
+offset_left = -600.0
+offset_top = -25.0
+offset_right = 600.0
+offset_bottom = 25.0
+color = Color(0.3, 0.3, 0.35, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/MainPlatform" unique_id=988584244]
+shape = SubResource("RectangleShape2D_ground")
+
+[node name="LeftPlatform" type="StaticBody2D" parent="Stage" unique_id=1265903316]
+position = Vector2(400, 600)
+
+[node name="ColorRect" type="ColorRect" parent="Stage/LeftPlatform" unique_id=171233602]
+offset_left = -150.0
+offset_top = -10.0
+offset_right = 150.0
+offset_bottom = 10.0
+color = Color(0.3, 0.3, 0.35, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/LeftPlatform" unique_id=1735231251]
+shape = SubResource("RectangleShape2D_platform")
+
+[node name="RightPlatform" type="StaticBody2D" parent="Stage" unique_id=926894967]
+position = Vector2(1520, 600)
+
+[node name="ColorRect" type="ColorRect" parent="Stage/RightPlatform" unique_id=464623989]
+offset_left = -150.0
+offset_top = -10.0
+offset_right = 150.0
+offset_bottom = 10.0
+color = Color(0.3, 0.3, 0.35, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/RightPlatform" unique_id=329212284]
+shape = SubResource("RectangleShape2D_platform")
+
+[node name="TopPlatform" type="StaticBody2D" parent="Stage" unique_id=285096357]
+position = Vector2(960, 400)
+
+[node name="ColorRect" type="ColorRect" parent="Stage/TopPlatform" unique_id=1318217068]
+offset_left = -150.0
+offset_top = -10.0
+offset_right = 150.0
+offset_bottom = 10.0
+color = Color(0.3, 0.3, 0.35, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/TopPlatform" unique_id=421152938]
+shape = SubResource("RectangleShape2D_platform")
+
+[node name="BlastZones" type="Node2D" parent="." unique_id=1103090802]
+
+[node name="LeftBlast" type="Area2D" parent="BlastZones" unique_id=2012362343]
+position = Vector2(-200, 540)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BlastZones/LeftBlast" unique_id=903787911]
+shape = SubResource("RectangleShape2D_ground")
+
+[node name="RightBlast" type="Area2D" parent="BlastZones" unique_id=1843176985]
+position = Vector2(2120, 540)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BlastZones/RightBlast" unique_id=1714450183]
+shape = SubResource("RectangleShape2D_ground")
+
+[node name="TopBlast" type="Area2D" parent="BlastZones" unique_id=300595335]
+position = Vector2(960, -200)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BlastZones/TopBlast" unique_id=210371852]
+shape = SubResource("RectangleShape2D_ground")
+
+[node name="BottomBlast" type="Area2D" parent="BlastZones" unique_id=1877963951]
+position = Vector2(960, 1280)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BlastZones/BottomBlast" unique_id=147958551]
+shape = SubResource("RectangleShape2D_ground")
+
+[node name="Player1" type="CharacterBody2D" parent="." groups=["players"] unique_id=1228141685]
+position = Vector2(760, 700)
+collision_layer = 2
+collision_mask = 7
+script = ExtResource("1_player")
+player_id = 1
+
+[node name="Visuals" type="Node2D" parent="Player1" unique_id=1352774957]
+
+[node name="Body" type="ColorRect" parent="Player1/Visuals" unique_id=267841291]
+offset_left = -20.0
+offset_top = -30.0
+offset_right = 20.0
+offset_bottom = 30.0
+color = Color(0.2, 0.6, 1, 1)
+
+[node name="EyeLeft" type="ColorRect" parent="Player1/Visuals" unique_id=517303366]
+offset_left = -12.0
+offset_top = -20.0
+offset_right = -4.0
+offset_bottom = -12.0
+
+[node name="EyeRight" type="ColorRect" parent="Player1/Visuals" unique_id=1137113446]
+offset_left = 4.0
+offset_top = -20.0
+offset_right = 12.0
+offset_bottom = -12.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player1" unique_id=1657353742]
+shape = SubResource("RectangleShape2D_player")
+
+[node name="Hitbox" type="Area2D" parent="Player1" unique_id=496786771]
+collision_layer = 4
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player1/Hitbox" unique_id=2132228781]
+shape = SubResource("RectangleShape2D_player")
+
+[node name="Hurtbox" type="Area2D" parent="Player1" unique_id=573791388]
+collision_layer = 8
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player1/Hurtbox" unique_id=2135070162]
+shape = SubResource("RectangleShape2D_player")
+
+[node name="Player2" type="CharacterBody2D" parent="." groups=["players"] unique_id=1303521919]
+position = Vector2(1160, 700)
+collision_layer = 2
+collision_mask = 7
+script = ExtResource("1_player")
+player_id = 2
+
+[node name="Visuals" type="Node2D" parent="Player2" unique_id=259295642]
+
+[node name="Body" type="ColorRect" parent="Player2/Visuals" unique_id=273595082]
+offset_left = -20.0
+offset_top = -30.0
+offset_right = 20.0
+offset_bottom = 30.0
+color = Color(1, 0.2, 0.2, 1)
+
+[node name="EyeLeft" type="ColorRect" parent="Player2/Visuals" unique_id=174430214]
+offset_left = -12.0
+offset_top = -20.0
+offset_right = -4.0
+offset_bottom = -12.0
+
+[node name="EyeRight" type="ColorRect" parent="Player2/Visuals" unique_id=1932265079]
+offset_left = 4.0
+offset_top = -20.0
+offset_right = 12.0
+offset_bottom = -12.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player2" unique_id=1025516880]
+shape = SubResource("RectangleShape2D_player")
+
+[node name="Hitbox" type="Area2D" parent="Player2" unique_id=315082534]
+collision_layer = 4
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player2/Hitbox" unique_id=1293016702]
+shape = SubResource("RectangleShape2D_player")
+
+[node name="Hurtbox" type="Area2D" parent="Player2" unique_id=1617948555]
+collision_layer = 8
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player2/Hurtbox" unique_id=1765222526]
+shape = SubResource("RectangleShape2D_player")
+
+[node name="HUD" type="CanvasLayer" parent="." unique_id=24500906]
+script = ExtResource("3_hud")
+
+[node name="P1Percent" type="Label" parent="HUD" unique_id=182395439]
+offset_left = 50.0
+offset_top = 50.0
+offset_right = 150.0
+offset_bottom = 100.0
+theme_override_font_sizes/font_size = 48
+text = "0%"
+horizontal_alignment = 1
+
+[node name="P1Stocks" type="Label" parent="HUD" unique_id=1572787369]
+offset_left = 50.0
+offset_top = 100.0
+offset_right = 150.0
+offset_bottom = 130.0
+text = "Stocks: 3"
+
+[node name="P2Percent" type="Label" parent="HUD" unique_id=1580177055]
+offset_left = 1720.0
+offset_top = 50.0
+offset_right = 1820.0
+offset_bottom = 100.0
+theme_override_font_sizes/font_size = 48
+text = "0%"
+horizontal_alignment = 1
+
+[node name="P2Stocks" type="Label" parent="HUD" unique_id=514608405]
+offset_left = 1720.0
+offset_top = 100.0
+offset_right = 1820.0
+offset_bottom = 130.0
+text = "Stocks: 3"
+horizontal_alignment = 2
+
+[node name="Controls" type="Label" parent="HUD" unique_id=1103035081]
+offset_left = 560.0
+offset_top = 1000.0
+offset_right = 1360.0
+offset_bottom = 1030.0
+text = "P1: WASD + J(Attack) | P2: Arrows + Numpad 1(Attack)"
+horizontal_alignment = 1

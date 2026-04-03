@@ -1,0 +1,9 @@
+63f7b34db8d8cdea90c76aacccf841ec
+::res://::1775208879
+::res://assets/::1775207677
+::res://scenes/::1775208843
+main.tscn::PackedScene::4307999187124923932::1775208843::0::1::::<><><>0<>0<><>::uid://yita3sxotxt7::::res://scripts/player.gd<>uid://bydg01py4q6c2::::res://scripts/camera.gd<>uid://bgxdswg22ulsm::::res://scripts/hud.gd
+::res://scripts/::1775208224
+camera.gd::GDScript::4077556400981317483::1775207793::0::1::::<>Camera2D<><>0<>0<><>::
+hud.gd::GDScript::2855249895179424332::1775207804::0::1::::<>CanvasLayer<><>0<>0<><>::
+player.gd::GDScript::1702202391732599258::1775208366::0::1::::SmashPlayer<>CharacterBody2D<><>0<>0<><>::
