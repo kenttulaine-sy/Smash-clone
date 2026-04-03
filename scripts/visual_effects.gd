@@ -122,3 +122,51 @@ func spawn_landing_dust(position: Vector2) -> void:
 		tween.tween_property(dust, "position:y", dust.position.y - 30, 0.3)
 		tween.parallel().tween_property(dust, "modulate:a", 0.0, 0.3)
 		tween.tween_callback(dust.queue_free)
+
+func spawn_charge_effect(position: Vector2, player_id: int) -> void:
+	"""Spawn charging particles for smash attacks"""
+	var color = Color(1.0, 0.5, 0.0, 0.7) if player_id == 1 else Color(0.0, 0.5, 1.0, 0.7)
+	for i in range(3):
+		var particle = ColorRect.new()
+		particle.color = color
+		particle.size = Vector2(6, 6)
+		var angle = randf() * TAU
+		var dist = randf_range(20, 40)
+		particle.position = position + Vector2(cos(angle), sin(angle)) * dist
+		add_child(particle)
+		
+		var tween = create_tween()
+		tween.tween_property(particle, "position", position, 0.2)
+		tween.parallel().tween_property(particle, "modulate:a", 0.0, 0.2)
+		tween.tween_callback(particle.queue_free)
+
+func spawn_shield_break_effect(position: Vector2) -> void:
+	"""Spawn shield break explosion"""
+	for i in range(12):
+		var shard = ColorRect.new()
+		shard.color = Color(0.3, 0.6, 1.0, 0.9)
+		shard.size = Vector2(8, 8)
+		shard.position = position
+		add_child(shard)
+		
+		var angle = (i / 12.0) * TAU
+		var velocity = Vector2(cos(angle), sin(angle)) * randf_range(200, 400)
+		
+		var tween = create_tween()
+		tween.tween_property(shard, "position", position + velocity * 0.3, 0.3)
+		tween.parallel().tween_property(shard, "rotation", randf_range(-PI, PI), 0.3)
+		tween.parallel().tween_property(shard, "modulate:a", 0.0, 0.3)
+		tween.tween_callback(shard.queue_free)
+
+func spawn_spawn_flash(position: Vector2) -> void:
+	"""Spawn respawn flash effect"""
+	var flash = ColorRect.new()
+	flash.color = Color(1.0, 1.0, 1.0, 0.8)
+	flash.size = Vector2(100, 100)
+	flash.position = position - Vector2(50, 50)
+	add_child(flash)
+	
+	var tween = create_tween()
+	tween.tween_property(flash, "scale", Vector2(3, 3), 0.4)
+	tween.parallel().tween_property(flash, "modulate:a", 0.0, 0.4)
+	tween.tween_callback(flash.queue_free)
