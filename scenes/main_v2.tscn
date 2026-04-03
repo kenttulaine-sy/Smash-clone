@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://scripts/match_manager_v2.gd" id="8_match_v2"]
 [ext_resource type="Script" path="res://scripts/audio_manager.gd" id="9_audio"]
 [ext_resource type="Script" path="res://scripts/visual_effects.gd" id="10_vfx"]
+[ext_resource type="Script" path="res://scripts/simple_ai.gd" id="11_ai"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ground"]
 size = Vector2(1400, 50)
@@ -215,6 +216,9 @@ script = ExtResource("5_hurtbox")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Player2/Hurtbox"]
 shape = SubResource("RectangleShape2D_player")
+
+[node name="AIController" type="Node" parent="Player2"]
+script = ExtResource("11_ai")
 
 [node name="HUD" type="CanvasLayer" parent="."]
 script = ExtResource("7_hud_v2")
