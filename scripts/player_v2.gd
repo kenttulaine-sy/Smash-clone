@@ -6,6 +6,7 @@ class_name SmashFighter
 
 const CombatSystem = preload("res://scripts/combat_system.gd")
 const Model3DManager = preload("res://scripts/model_3d_manager.gd")
+const PlayerStateMachine = preload("res://scripts/player_states.gd")
 
 # ============================================================================
 # PREMIUM MOVEMENT TUNING - ADJUST THESE FOR GAME FEEL
@@ -163,36 +164,27 @@ func find_opponent() -> void:
 	print("Warning: Player ", player_id, " could not find opponent!")
 
 func setup_3d_model() -> void:
-	"""Initialize 3D model using pre-imported scene"""
+	"""Use enhanced 2D visuals instead of problematic 3D"""
 	
-	# Hide original 2D visuals for now
+	# Keep 2D visuals but enhance them
 	if visuals:
-		visuals.visible = false
+		visuals.visible = true
+		
+		# Make the body more visible
+		var body = visuals.get_node_or_null("Body")
+		if body:
+			body.color = Color(0.2, 0.6, 1.0, 1.0) if player_id == 1 else Color(1.0, 0.3, 0.3, 1.0)
+			body.size = Vector2(50, 70)  # Slightly larger
+		
+		# Add visual indicator for facing direction
+		var indicator = ColorRect.new()
+		indicator.name = "FacingIndicator"
+		indicator.color = Color(1, 1, 0, 1)  # Yellow arrow
+		indicator.size = Vector2(10, 10)
+		indicator.position = Vector2(25, -25)  # Right side
+		visuals.add_child(indicator)
 	
-	# Load the pre-imported scene (from .godot/imported/)
-	var imported_scene = load("res://.godot/imported/2d_fortnite.glb-5b58d831dd89bf3ed9f016f69759d9b6.scn")
-	if imported_scene == null:
-		push_error("Failed to load imported 3D model scene")
-		return
-	
-	# Instantiate the model
-	var model_instance = imported_scene.instantiate()
-	if model_instance == null:
-		push_error("Failed to instantiate 3D model")
-		return
-	
-	# Configure the model - make it much larger
-	model_instance.name = "Character3D"
-	model_instance.scale = Vector3(2.0, 2.0, 2.0)  # Larger scale
-	model_instance.position = Vector3(0, -30, 0)  # Offset so feet are at origin
-	
-	# Store reference
-	character_3d = model_instance
-	
-	# Add to player
-	add_child(model_instance)
-	
-	print("Player ", player_id, ": 3D model loaded from imported scene")
+	print("Player ", player_id, ": Enhanced 2D visuals ready")
 
 func update_model_animation(delta: float) -> void:
 	"""Procedurally animate the 3D model based on player state"""
@@ -698,10 +690,36 @@ func take_damage(damage, knockback, angle, attacker):
 	
 	state_machine.change_state(PlayerStateMachine.State.HITSTUN)
 	
-	# Screen shake
+	# VISUAL FEEDBACK: Flash red on hit
+	flash_character_color(Color(1.0, 0.2, 0.2, 1.0), 0.1)
+	
+	# SCREEN SHAKE: Based on knockback strength
+	var shake_amount = min(knockback / 50.0, 12.0)
+	trigger_screen_shake(shake_amount)
+	
+	print("  Player ", player_id, " took damage! KB=", knockback, " Angle=", angle)
+
+func flash_character_color(color: Color, duration: float) -> void:
+	"""Flash the character with a color for hit feedback"""
+	var body = visuals.get_node_or_null("Body")
+	if body:
+		var original_color = body.color
+		body.color = color
+		await get_tree().create_timer(duration).timeout
+		if is_instance_valid(body):
+			body.color = original_color
+
+func trigger_screen_shake(amount: float) -> void:
+	"""Trigger screen shake effect"""
 	var camera = get_viewport().get_camera_2d()
 	if camera and camera.has_method("shake"):
-		camera.shake(min(knockback / 100.0, 8.0))
+		camera.shake(amount)
+	elif camera:
+		# Fallback: manual shake
+		camera.offset = Vector2(randf_range(-amount, amount), randf_range(-amount, amount))
+		await get_tree().create_timer(0.05).timeout
+		if is_instance_valid(camera):
+			camera.offset = Vector2.ZERO
 
 func check_blast_zones():
 	if state_machine.current_state in [PlayerStateMachine.State.DEAD, PlayerStateMachine.State.RESPAWN]:
