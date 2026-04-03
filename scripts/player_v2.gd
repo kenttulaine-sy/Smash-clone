@@ -125,6 +125,21 @@ var dodge_direction: float = 0.0  # -1 for left, 1 for right
 var last_down_press: float = 0.0
 const DOUBLE_TAP_WINDOW: float = 0.2  # Time between taps for double-tap
 
+# --- GRAB SYSTEM ---
+var is_grabbing: bool = false
+var grabbed_opponent: Node = null
+const GRAB_DURATION: float = 0.5  # Time to hold before auto-release
+const THROW_DAMAGE: float = 6.0
+const THROW_BASE_KNOCKBACK: float = 350.0
+var grab_timer: float = 0.0
+
+# --- LEDGE GRAB ---
+var can_ledge_grab: bool = true
+const LEDGE_GRAB_COOLDOWN: float = 1.0  # Time before can grab again
+var ledge_grab_timer: float = 0.0
+var is_hanging: bool = false
+var ledge_position: Vector2 = Vector2.ZERO
+
 # --- MOVEMENT STATE ---
 var was_on_floor: bool = false  # Track previous frame for coyote time
 var last_input_x: float = 0.0   # Track direction for pivot detection
@@ -341,6 +356,12 @@ func _physics_process(delta):
 			process_shield(delta)
 		PlayerStateMachine.State.DODGE:
 			process_dodge(delta)
+		PlayerStateMachine.State.GRAB:
+			process_grab(delta)
+		PlayerStateMachine.State.GRABBED:
+			process_grabbed(delta)
+		PlayerStateMachine.State.LEDGE_HANG:
+			process_ledge_hang(delta)
 		PlayerStateMachine.State.HITSTUN:
 			process_hitstun(delta)
 		PlayerStateMachine.State.LANDING_LAG:
@@ -504,6 +525,97 @@ func process_dodge(delta: float) -> void:
 	
 	move_and_slide()
 
+func process_grab(delta: float) -> void:
+	"""Grab state - holding opponent"""
+	apply_gravity(delta)
+	
+	grab_timer += delta
+	
+	# Move with grabbed opponent
+	if grabbed_opponent and is_instance_valid(grabbed_opponent):
+		# Keep opponent in front
+		var hold_offset = Vector2(40 if facing_right else -40, -10)
+		grabbed_opponent.global_position = global_position + hold_offset
+		grabbed_opponent.velocity = Vector2.ZERO
+	
+	# Check for throw input
+	var input_dir = Vector2(get_input_x(), -1 if get_input_jump() else (1 if get_input_down() else 0))
+	if input_dir != Vector2.ZERO or get_input_attack():
+		throw_opponent(input_dir)
+		return
+	
+	# Auto-release after duration
+	if grab_timer >= GRAB_DURATION:
+		release_grab()
+		return
+	
+	velocity.x = move_toward(velocity.x, 0, GROUND_DECEL * delta)
+	move_and_slide()
+
+func process_grabbed(delta: float) -> void:
+	"""Grabbed state - being held by opponent"""
+	# Don't process movement - controlled by grabber
+	velocity = Vector2.ZERO
+	
+	# Can mash buttons to escape faster (future feature)
+	pass
+
+func check_ledge_grab() -> void:
+	"""Check if player can grab a ledge"""
+	if not can_ledge_grab or is_hanging:
+		return
+	
+	# Raycast for ledges (simplified - check nearby platforms)
+	var space_state = get_world_2d().direct_space_state
+	var query = PhysicsRayQueryParameters2D.new()
+	
+	# Check in front of player
+	var check_pos = global_position + Vector2(30 if facing_right else -30, -30)
+	query.from = global_position
+	query.to = check_pos
+	query.collision_mask = 1  # Platform layer
+	
+	var result = space_state.intersect_ray(query)
+	if result and result.collider:
+		# Found a ledge - check if it's the edge
+		var collider = result.collider
+		if collider.is_in_group("ledge") or collider.get_parent().name.contains("Platform"):
+			grab_ledge(result.position)
+
+func grab_ledge(pos: Vector2) -> void:
+	"""Grab onto a ledge"""
+	is_hanging = true
+	can_ledge_grab = false
+	ledge_position = pos
+	velocity = Vector2.ZERO
+	state_machine.change_state(PlayerStateMachine.State.LEDGE_HANG)
+	print("Player ", player_id, ": LEDGE GRAB!")
+
+func process_ledge_hang(delta: float) -> void:
+	"""Ledge hang state"""
+	velocity = Vector2.ZERO
+	position = ledge_position + Vector2(0, -30)  # Hang below ledge
+	
+	# Options from ledge:
+	# 1. Press Up to climb up
+	# 2. Press Jump to jump off
+	# 3. Press Down to drop
+	
+	if get_input_jump():
+		# Jump off ledge
+		is_hanging = false
+		velocity.y = JUMP_FORCE
+		ledge_grab_timer = LEDGE_GRAB_COOLDOWN
+		state_machine.change_state(PlayerStateMachine.State.AIRBORNE)
+		return
+	
+	if get_input_down():
+		# Drop from ledge
+		is_hanging = false
+		ledge_grab_timer = LEDGE_GRAB_COOLDOWN
+		state_machine.change_state(PlayerStateMachine.State.AIRBORNE)
+		return
+
 func process_jump_squat(delta):
 	# Deprecated - instant jump now handles this
 	state_machine.change_state(PlayerStateMachine.State.AIRBORNE)
@@ -556,6 +668,10 @@ func process_airborne(delta):
 	if was_on_floor and not is_on_floor():
 		coyote_timer = COYOTE_TIME
 		was_on_floor = false
+	
+	# Check for ledge grab
+	if can_ledge_grab and velocity.y > 0:  # Falling
+		check_ledge_grab()
 	
 	move_and_slide()
 	update_facing()
@@ -884,6 +1000,11 @@ func get_input_jump_held() -> bool:
 func get_input_attack() -> bool:
 	var pressed = Input.is_action_just_pressed("p1_attack") if player_id == 1 else Input.is_action_just_pressed("p2_attack")
 	
+	# Check for grab input first (shield + attack)
+	if pressed and get_input_down_held():
+		try_grab()
+		return false
+	
 	# NEW: Buffer the attack input if we can't attack right now
 	if pressed and not state_machine.can_attack():
 		attack_buffer = ATTACK_BUFFER_TIME
@@ -964,6 +1085,83 @@ func try_shield() -> bool:
 		return true
 	
 	return false
+
+func try_grab() -> void:
+	"""Attempt to grab opponent"""
+	if is_grabbing or grabbed_opponent != null:
+		return
+	
+	if not is_on_floor():
+		return
+	
+	# Check if opponent is in grab range
+	if opponent and is_instance_valid(opponent):
+		var distance = global_position.distance_to(opponent.global_position)
+		if distance < 60:  # Grab range
+			# Check facing direction
+			var facing_them = (opponent.global_position.x > global_position.x and facing_right) or \
+							  (opponent.global_position.x < global_position.x and not facing_right)
+			
+			if facing_them:
+				perform_grab()
+
+func perform_grab() -> void:
+	"""Execute grab on opponent"""
+	is_grabbing = true
+	grabbed_opponent = opponent
+	grab_timer = 0.0
+	
+	# Freeze opponent
+	if grabbed_opponent.has_method("get_grabbed"):
+		grabbed_opponent.get_grabbed(self)
+	
+	state_machine.change_state(PlayerStateMachine.State.GRAB)
+	print("Player ", player_id, ": GRABBED opponent!")
+
+func get_grabbed(by_player: Node) -> void:
+	"""Called when grabbed by opponent"""
+	state_machine.change_state(PlayerStateMachine.State.GRABBED)
+	velocity = Vector2.ZERO
+
+func release_grab() -> void:
+	"""Release grabbed opponent without throwing"""
+	if grabbed_opponent and is_instance_valid(grabbed_opponent):
+		if grabbed_opponent.has_method("get_released"):
+			grabbed_opponent.get_released()
+	
+	is_grabbing = false
+	grabbed_opponent = null
+	grab_timer = 0.0
+	state_machine.change_state(PlayerStateMachine.State.IDLE)
+
+func get_released() -> void:
+	"""Called when released from grab"""
+	state_machine.change_state(PlayerStateMachine.State.IDLE)
+
+func throw_opponent(direction: Vector2) -> void:
+	"""Throw grabbed opponent in direction"""
+	if not grabbed_opponent or not is_instance_valid(grabbed_opponent):
+		return
+	
+	# Calculate throw based on input
+	var throw_angle = -45  # Default up-forward
+	if direction.y > 0:
+		throw_angle = 45  # Down
+	elif direction.x != 0:
+		throw_angle = -35  # Forward
+	
+	var throw_kb = THROW_BASE_KNOCKBACK + (damage_percent * 2)  # Scale with damage
+	
+	if grabbed_opponent.has_method("take_damage"):
+		grabbed_opponent.take_damage(THROW_DAMAGE, throw_kb, throw_angle, self)
+	
+	# Spawn throw effect
+	var vfx = get_node_or_null("/root/Main/VisualEffects")
+	if vfx:
+		vfx.spawn_hit_burst(global_position, throw_kb)
+	
+	release_grab()
+	print("Player ", player_id, ": THROW!")
 
 func _on_state_changed(new_state, old_state):
 	print("Player ", player_id, ": ", state_machine.get_state_name())
