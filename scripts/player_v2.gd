@@ -792,6 +792,9 @@ func _on_hitbox_area_entered(area):
 		target.take_damage(damage, kb, angle, self)
 		create_hit_effect(area.global_position)
 		
+		# Spawn punch impact at target's position with directional offset
+		spawn_punch_impact(target.global_position, facing_right)
+		
 		print("Player ", player_id, " hit opponent! Distance: ", distance_to_target, " Damage: ", damage)
 
 func create_hit_effect(pos):
@@ -803,6 +806,31 @@ func create_hit_effect(pos):
 	
 	await get_tree().create_timer(0.1).timeout
 	flash.queue_free()
+
+func spawn_punch_impact(target_pos: Vector2, facing_right: bool) -> void:
+	"""Spawn punch impact effect at target position with directional offset"""
+	# Calculate offset based on facing direction (spawn slightly in front of target)
+	var offset = Vector2(25 if facing_right else -25, -10)  # Offset to side and up slightly
+	var spawn_pos = target_pos + offset
+	
+	# Create impact visual
+	var impact = ColorRect.new()
+	impact.name = "PunchImpact"
+	impact.color = Color(1.0, 0.9, 0.3, 0.9)  # Yellow-white impact
+	impact.size = Vector2(30, 30)
+	impact.position = spawn_pos - impact.size / 2
+	
+	# Add to scene (not attached to player)
+	get_tree().root.add_child(impact)
+	
+	# Scale up and fade out animation
+	var tween = create_tween()
+	tween.tween_property(impact, "scale", Vector2(1.5, 1.5), 0.1)
+	tween.parallel().tween_property(impact, "modulate:a", 0.0, 0.15)
+	tween.tween_callback(impact.queue_free)
+	
+	# Debug log
+	print("  IMPACT: Spawned punch impact at ", spawn_pos, " facing ", "right" if facing_right else "left")
 
 func create_double_jump_effect():
 	"""Spawn particle effect on double jump"""
