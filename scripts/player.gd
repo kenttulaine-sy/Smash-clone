@@ -100,18 +100,15 @@ func _physics_process(delta):
         move_and_slide()
         return
     
-    # Handle shield
-    if is_shielding:
+    # Get input FIRST (unless shielding or attacking)
+    if not is_shielding and not is_attacking:
+        get_input()
+    elif is_shielding:
         handle_shield(delta)
         return
-    
-    # Handle attack
-    if is_attacking:
+    elif is_attacking:
         handle_attack(delta)
         return
-    
-    # Get input
-    get_input()
     
     # Apply physics
     apply_gravity(delta)

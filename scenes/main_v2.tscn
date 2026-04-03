@@ -1,0 +1,270 @@
+[gd_scene load_steps=17 format=4 uid="uid://di5i1jgmocsp3"]
+
+[ext_resource type="Script" path="res://scripts/player_v2.gd" id="1_player_v2"]
+[ext_resource type="Script" path="res://scripts/player_states.gd" id="2_states"]
+[ext_resource type="Script" path="res://scripts/attack_data.gd" id="3_attack_data"]
+[ext_resource type="Script" path="res://scripts/hitbox.gd" id="4_hitbox"]
+[ext_resource type="Script" path="res://scripts/hurtbox.gd" id="5_hurtbox"]
+[ext_resource type="Script" path="res://scripts/camera.gd" id="6_camera"]
+[ext_resource type="Script" path="res://scripts/hud_v2.gd" id="7_hud_v2"]
+[ext_resource type="Script" path="res://scripts/match_manager_v2.gd" id="8_match_v2"]
+[ext_resource type="Script" path="res://scripts/audio_manager.gd" id="9_audio"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground"]
+size = Vector2(1400, 50)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_platform"]
+size = Vector2(280, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_side_platform"]
+size = Vector2(200, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
+size = Vector2(40, 60)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_blast"]
+size = Vector2(200, 1600)
+
+[node name="Main" type="Node2D"]
+
+[node name="AudioManager" type="Node" parent="."]
+script = ExtResource("9_audio")
+
+[node name="MatchManager" type="Node" parent="."]
+script = ExtResource("8_match_v2")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(960, 540)
+script = ExtResource("6_camera")
+
+[node name="Stage" type="Node2D" parent="."]
+
+[node name="MainPlatform" type="StaticBody2D" parent="Stage"]
+position = Vector2(960, 800)
+collision_layer = 1
+
+[node name="ColorRect" type="ColorRect" parent="Stage/MainPlatform"]
+offset_left = -600.0
+offset_top = -25.0
+offset_right = 600.0
+offset_bottom = 25.0
+color = Color(0.3, 0.3, 0.35, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/MainPlatform"]
+shape = SubResource("RectangleShape2D_ground")
+
+[node name="LeftPlatform" type="StaticBody2D" parent="Stage"]
+position = Vector2(400, 600)
+collision_layer = 1
+
+[node name="ColorRect" type="ColorRect" parent="Stage/LeftPlatform"]
+offset_left = -150.0
+offset_top = -10.0
+offset_right = 150.0
+offset_bottom = 10.0
+color = Color(0.3, 0.3, 0.35, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/LeftPlatform"]
+shape = SubResource("RectangleShape2D_platform")
+
+[node name="RightPlatform" type="StaticBody2D" parent="Stage"]
+position = Vector2(1520, 600)
+collision_layer = 1
+
+[node name="ColorRect" type="ColorRect" parent="Stage/RightPlatform"]
+offset_left = -150.0
+offset_top = -10.0
+offset_right = 150.0
+offset_bottom = 10.0
+color = Color(0.3, 0.3, 0.35, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/RightPlatform"]
+shape = SubResource("RectangleShape2D_platform")
+
+[node name="TopPlatform" type="StaticBody2D" parent="Stage"]
+position = Vector2(960, 400)
+collision_layer = 1
+
+[node name="ColorRect" type="ColorRect" parent="Stage/TopPlatform"]
+offset_left = -150.0
+offset_top = -10.0
+offset_right = 150.0
+offset_bottom = 10.0
+color = Color(0.3, 0.3, 0.35, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Stage/TopPlatform"]
+shape = SubResource("RectangleShape2D_platform")
+
+[node name="BlastZones" type="Node2D" parent="."]
+
+[node name="LeftBlast" type="Area2D" parent="BlastZones"]
+position = Vector2(-300, 540)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BlastZones/LeftBlast"]
+shape = SubResource("RectangleShape2D_ground")
+
+[node name="RightBlast" type="Area2D" parent="BlastZones"]
+position = Vector2(2220, 540)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BlastZones/RightBlast"]
+shape = SubResource("RectangleShape2D_ground")
+
+[node name="TopBlast" type="Area2D" parent="BlastZones"]
+position = Vector2(960, -300)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BlastZones/TopBlast"]
+shape = SubResource("RectangleShape2D_ground")
+
+[node name="BottomBlast" type="Area2D" parent="BlastZones"]
+position = Vector2(960, 1380)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BlastZones/BottomBlast"]
+shape = SubResource("RectangleShape2D_ground")
+
+[node name="Player1" type="CharacterBody2D" parent="." groups=["players"]]
+position = Vector2(760, 500)
+collision_layer = 2
+collision_mask = 7
+script = ExtResource("1_player_v2")
+player_id = 1
+
+[node name="Visuals" type="Node2D" parent="Player1"]
+
+[node name="Body" type="ColorRect" parent="Player1/Visuals"]
+offset_left = -20.0
+offset_top = -30.0
+offset_right = 20.0
+offset_bottom = 30.0
+color = Color(0.2, 0.6, 1, 1)
+
+[node name="EyeLeft" type="ColorRect" parent="Player1/Visuals"]
+offset_left = -12.0
+offset_top = -20.0
+offset_right = -4.0
+offset_bottom = -12.0
+color = Color(1, 1, 1, 1)
+
+[node name="EyeRight" type="ColorRect" parent="Player1/Visuals"]
+offset_left = 4.0
+offset_top = -20.0
+offset_right = 12.0
+offset_bottom = -12.0
+color = Color(1, 1, 1, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player1"]
+shape = SubResource("RectangleShape2D_player")
+
+[node name="Hitbox" type="Area2D" parent="Player1"]
+collision_layer = 4
+collision_mask = 8
+script = ExtResource("4_hitbox")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player1/Hitbox"]
+
+[node name="Hurtbox" type="Area2D" parent="Player1"]
+collision_layer = 8
+script = ExtResource("5_hurtbox")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player1/Hurtbox"]
+shape = SubResource("RectangleShape2D_player")
+
+[node name="Player2" type="CharacterBody2D" parent="." groups=["players"]]
+position = Vector2(1160, 500)
+collision_layer = 2
+collision_mask = 7
+script = ExtResource("1_player_v2")
+player_id = 2
+
+[node name="Visuals" type="Node2D" parent="Player2"]
+
+[node name="Body" type="ColorRect" parent="Player2/Visuals"]
+offset_left = -20.0
+offset_top = -30.0
+offset_right = 20.0
+offset_bottom = 30.0
+color = Color(1, 0.2, 0.2, 1)
+
+[node name="EyeLeft" type="ColorRect" parent="Player2/Visuals"]
+offset_left = -12.0
+offset_top = -20.0
+offset_right = -4.0
+offset_bottom = -12.0
+color = Color(1, 1, 1, 1)
+
+[node name="EyeRight" type="ColorRect" parent="Player2/Visuals"]
+offset_left = 4.0
+offset_top = -20.0
+offset_right = 12.0
+offset_bottom = -12.0
+color = Color(1, 1, 1, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player2"]
+shape = SubResource("RectangleShape2D_player")
+
+[node name="Hitbox" type="Area2D" parent="Player2"]
+collision_layer = 4
+collision_mask = 8
+script = ExtResource("4_hitbox")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player2/Hitbox"]
+
+[node name="Hurtbox" type="Area2D" parent="Player2"]
+collision_layer = 8
+script = ExtResource("5_hurtbox")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player2/Hurtbox"]
+shape = SubResource("RectangleShape2D_player")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+script = ExtResource("7_hud_v2")
+
+[node name="P1Percent" type="Label" parent="HUD"]
+offset_left = 50.0
+offset_top = 50.0
+offset_right = 150.0
+offset_bottom = 100.0
+theme_override_font_sizes/font_size = 48
+text = "0%"
+horizontal_alignment = 1
+
+[node name="P1Stocks" type="Label" parent="HUD"]
+offset_left = 50.0
+offset_top = 100.0
+offset_right = 150.0
+offset_bottom = 130.0
+text = "Stocks: 3"
+
+[node name="P2Percent" type="Label" parent="HUD"]
+offset_left = 1720.0
+offset_top = 50.0
+offset_right = 1820.0
+offset_bottom = 100.0
+theme_override_font_sizes/font_size = 48
+text = "0%"
+horizontal_alignment = 1
+
+[node name="P2Stocks" type="Label" parent="HUD"]
+offset_left = 1720.0
+offset_top = 100.0
+offset_right = 1820.0
+offset_bottom = 130.0
+text = "Stocks: 3"
+horizontal_alignment = 2
+
+[node name="Controls" type="Label" parent="HUD"]
+offset_left = 560.0
+offset_top = 1000.0
+offset_right = 1360.0
+offset_bottom = 1030.0
+text = "P1: WASD + J(Attack) | P2: Arrows + K(Attack)"
+horizontal_alignment = 1
+
+[node name="WinnerText" type="Label" parent="HUD"]
+visible = false
+offset_left = 710.0
+offset_top = 300.0
+offset_right = 1210.0
+offset_bottom = 400.0
+theme_override_font_sizes/font_size = 72
+text = "PLAYER 1 WINS!"
+horizontal_alignment = 1
