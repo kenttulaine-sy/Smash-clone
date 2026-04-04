@@ -1028,16 +1028,22 @@ func apply_gravity(delta):
 	velocity.y = min(velocity.y, MAX_FALL_SPEED if not is_fast_falling else FAST_FALL_SPEED)
 
 func update_facing():
-	if velocity.x > 30:
-		facing_right = true
-	elif velocity.x < -30:
-		facing_right = false
+	# Face opponent if we have one, otherwise face movement direction
+	if opponent:
+		# Face toward opponent (P1 on left faces right, P2 on right faces left initially)
+		facing_right = (opponent.position.x > position.x)
+	else:
+		# Fall back to movement-based facing
+		if velocity.x > 30:
+			facing_right = true
+		elif velocity.x < -30:
+			facing_right = false
 	
 	# Update 2D visuals (hidden but kept for compatibility)
 	visuals.scale.x = 1 if facing_right else -1
 	
 	# Update warrior visuals
-	var warrior = visuals.get_node_or_null("WarriorSprites")  # FIXED: was WarriorVisuals
+	var warrior = visuals.get_node_or_null("WarriorSprites")
 	if warrior and warrior.has_method("set_facing_right"):
 		warrior.set_facing_right(facing_right)
 
