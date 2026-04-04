@@ -100,25 +100,34 @@ func _process(delta):
 	if not camera:
 		return
 	
-	var camera_x = camera.global_position.x
+	var camera_pos = camera.global_position
+	var camera_zoom = camera.zoom.x if camera else 1.0
 	
 	for layer_info in layer_sprites:
 		var sprite = layer_info.sprite
 		var speed = layer_info.speed
 		var base_x = layer_info.base_x
 		
-		# Calculate parallax position
-		# Layer moves slower than camera based on speed multiplier
-		var parallax_x = base_x - (camera_x * speed)
+		# Calculate parallax position for X (horizontal scrolling)
+		var parallax_x = base_x - (camera_pos.x * speed)
 		
-		# Wrap for seamless scrolling
+		# Wrap X for seamless horizontal scrolling
 		var texture_width = sprite.texture.get_width() * sprite.scale.x
 		while parallax_x > 0:
 			parallax_x -= texture_width
 		while parallax_x < -texture_width:
 			parallax_x += texture_width
 		
-		sprite.position.x = parallax_x
+		# For Y: Keep background vertically aligned with camera so it stays visible
+		# Background layers should follow camera Y but stay centered vertically
+		var texture_height = sprite.texture.get_height() * sprite.scale.y
+		var parallax_y = camera_pos.y - (texture_height / 2.0)
+		
+		sprite.position = Vector2(parallax_x, parallax_y)
+		
+		# Compensate for camera zoom - background shouldn't scale with zoom
+		# Actually, let it scale naturally with zoom for depth effect
+		# sprite.scale = Vector2(original_scale / camera_zoom, original_scale / camera_zoom)
 
 func update_parallax(camera_position: Vector2):
 	"""Manual update if needed"""
