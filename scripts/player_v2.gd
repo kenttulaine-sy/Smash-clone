@@ -200,16 +200,14 @@ func setup_3d_model() -> void:
 	"""Setup Tiny Swords warrior sprites using runtime loading"""
 	
 	# Remove ALL existing warrior sprites (prevents duplicates on reload)
-	while visuals.has_node("WarriorSprites"):
-		var existing = visuals.get_node("WarriorSprites")
-		if existing:
-			existing.queue_free()
-			await get_tree().process_frame  # Wait for actual deletion
+	# Use call_deferred to avoid async issues
+	for child in visuals.get_children():
+		if child.name == "WarriorSprites":
+			child.queue_free()
 	
 	# Hide old placeholder visuals (keep for compatibility but hide)
 	for child in visuals.get_children():
-		if child.name != "WarriorSprites":
-			child.visible = false
+		child.visible = false
 	
 	# Add warrior sprite loader
 	var warrior_script = load("res://scripts/warrior_sprite_loader.gd")
@@ -218,9 +216,19 @@ func setup_3d_model() -> void:
 	warrior.set_script(warrior_script)
 	warrior.warrior_color = "blue" if player_id == 1 else "red"
 	warrior.sprite_scale = 1.5
+	warrior.z_index = 10  # Make sure warrior is on top
 	visuals.add_child(warrior)
 	
-	print("Player ", player_id, ": Warrior sprites loading...")
+	# Move warrior to top of visuals
+	visuals.move_child(warrior, visuals.get_child_count() - 1)
+	
+	# Hide old placeholder visuals AFTER adding warrior
+	for child in visuals.get_children():
+		if child.name != "WarriorSprites":
+			child.visible = false
+			child.z_index = -1  # Push old visuals behind
+	
+	print("Player ", player_id, ": Warrior sprites setup complete")
 
 func setup_shield() -> void:
 	"""Create visual shield effect - scaled for new sprite size"""
@@ -278,7 +286,7 @@ func trigger_punch_animation() -> void:
 
 func update_warrior_animation() -> void:
 	"""Update warrior sprite animation based on player state"""
-	var warrior = visuals.get_node_or_null("WarriorVisuals")
+	var warrior = visuals.get_node_or_null("WarriorSprites")  # FIXED: was WarriorVisuals
 	if not warrior:
 		return
 	
@@ -1029,7 +1037,7 @@ func update_facing():
 	visuals.scale.x = 1 if facing_right else -1
 	
 	# Update warrior visuals
-	var warrior = visuals.get_node_or_null("WarriorVisuals")
+	var warrior = visuals.get_node_or_null("WarriorSprites")  # FIXED: was WarriorVisuals
 	if warrior and warrior.has_method("set_facing_right"):
 		warrior.set_facing_right(facing_right)
 
