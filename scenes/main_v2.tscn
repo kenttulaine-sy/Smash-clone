@@ -11,6 +11,7 @@
 [ext_resource type="Script" path="res://scripts/audio_manager.gd" id="9_audio"]
 [ext_resource type="Script" path="res://scripts/visual_effects.gd" id="10_vfx"]
 [ext_resource type="Script" path="res://scripts/simple_ai.gd" id="11_ai"]
+[ext_resource type="Script" path="res://scripts/forest_background.gd" id="12_forest_bg"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ground"]
 size = Vector2(1400, 50)
