@@ -32,7 +32,10 @@ func create_animated_sprite():
 	animated_sprite = AnimatedSprite2D.new()
 	animated_sprite.name = "AnimatedSprite2D"
 	animated_sprite.scale = Vector2(sprite_scale, sprite_scale)
-	animated_sprite.position = Vector2(0, -30)  # Offset so feet are at origin (adjusted for smaller scale)
+	# Position so feet touch ground at node origin
+	# Sprite is 192px tall, scaled by sprite_scale, so center should be at -height/2
+	var sprite_height = 192.0 * sprite_scale
+	animated_sprite.position = Vector2(0, -sprite_height * 0.5)  # Center sprite above origin
 	add_child(animated_sprite)
 	
 	sprite_frames = SpriteFrames.new()

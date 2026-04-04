@@ -246,12 +246,12 @@ func setup_3d_model() -> void:
 	print("Player ", player_id, ": Single WarriorSprites instance created")
 
 func setup_shield() -> void:
-	"""Create visual shield effect - scaled for new sprite size"""
+	"""Create visual shield effect - positioned to match warrior sprite center"""
 	shield_node = ColorRect.new()
 	shield_node.name = "ShieldVisual"
 	shield_node.color = Color(0.3, 0.6, 1.0, 0.5)  # Blue translucent
-	shield_node.size = Vector2(40, 50)  # Scaled down for 1.5x sprites
-	shield_node.position = Vector2(-20, -35)
+	shield_node.size = Vector2(50, 70)  # Size to match warrior proportions at 1.5x scale
+	shield_node.position = Vector2(-25, -85)  # Centered above origin, matching warrior
 	shield_node.visible = false
 	add_child(shield_node)
 
@@ -864,8 +864,8 @@ func create_hit_effect(pos):
 
 func spawn_punch_impact(target_pos: Vector2, facing_right: bool) -> void:
 	"""Spawn punch impact effect at target position with directional offset"""
-	# Calculate offset based on facing direction (spawn slightly in front of target)
-	var offset = Vector2(25 if facing_right else -25, -10)  # Offset to side and up slightly
+	# Calculate offset based on facing direction (spawn at torso height)
+	var offset = Vector2(25 if facing_right else -25, -45)  # Offset to side and to torso height
 	var spawn_pos = target_pos + offset
 	
 	# Create impact visual
@@ -1080,13 +1080,16 @@ func update_facing():
 	if old_facing != facing_right:
 		print("Player ", player_id, " FACING CHANGED: ", old_facing, " -> ", facing_right)
 	
-	# Update 2D visuals (hidden but kept for compatibility)
-	visuals.scale.x = 1 if facing_right else -1
-	
 	# Update warrior visuals - flip sprite based on facing direction
+	# Do NOT scale visuals - that causes offset drift
 	var warrior = visuals.get_node_or_null("WarriorSprites")
 	if warrior and warrior.has_method("set_facing_right"):
 		warrior.set_facing_right(facing_right)
+		
+	# Keep old visuals hidden (for compatibility only, don't flip them)
+	for child in visuals.get_children():
+		if child.name != "WarriorSprites" and child is ColorRect:
+			child.visible = false
 
 func force_facing_check() -> void:
 	"""Force facing update after opponent is found - ensures correct initial facing"""
