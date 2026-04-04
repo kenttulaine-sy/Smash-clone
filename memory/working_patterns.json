@@ -1,0 +1,38 @@
+[
+  {
+    "system": "Combat mechanics",
+    "status": "stable",
+    "notes": "11 modular attacks, knockback scaling, hit detection all working",
+    "do_not_break": true
+  },
+  {
+    "system": "Movement",
+    "status": "stable",
+    "notes": "Ground movement, air control, double jump, fast fall working",
+    "do_not_break": true
+  },
+  {
+    "system": "State machine",
+    "status": "stable",
+    "notes": "PlayerStateMachine handles all states correctly",
+    "do_not_break": true
+  },
+  {
+    "system": "AI controller",
+    "status": "stable",
+    "notes": "SimpleAI follows, jumps, attacks with cooldowns",
+    "do_not_break": true
+  },
+  {
+    "system": "Runtime sprite loading",
+    "status": "working",
+    "notes": "Image.load() -> ImageTexture.create_from_image() -> AtlasTexture flow works",
+    "do_not_break": true
+  },
+  {
+    "system": "Facing direction",
+    "status": "working",
+    "notes": "Characters face opponent with 10px deadzone, no flicker",
+    "do_not_break": true
+  }
+]

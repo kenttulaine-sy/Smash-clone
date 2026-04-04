@@ -1,0 +1,15 @@
+{
+  "character_size": "1.5x_scale_optimal",
+  "character_scale_history": [
+    "3.0x - too large",
+    "1.5x - good fit",
+    "2.5x - too large",
+    "1.5x - final optimal"
+  ],
+  "facing_direction": "face_opponent_not_movement",
+  "facing_deadzone": "10_pixels_prevents_flicker",
+  "animation_speed": "14fps_attack_matches_hitbox",
+  "visual_style": "tiny_swords_2d_warriors",
+  "color_scheme": "P1_blue_P2_red",
+  "asset_loading": "runtime_texture_loading_no_editor_import"
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "mistake": "Node name mismatch",
+    "details": "Code looked for 'WarriorVisuals' but node was named 'WarriorSprites'",
+    "fix": "Updated all references to use correct node name",
+    "files_affected": ["scripts/player_v2.gd"]
+  },
+  {
+    "mistake": "Duplicate sprite creation",
+    "details": "Warrior sprites were being created multiple times on reload",
+    "fix": "Added loop to remove existing WarriorSprites before creating new ones",
+    "files_affected": ["scripts/player_v2.gd"]
+  },
+  {
+    "mistake": "Async await in _ready causing issues",
+    "details": "Using await get_tree().process_frame in setup_3d_model caused timing issues",
+    "fix": "Removed await, use simple for loop with queue_free() instead",
+    "files_affected": ["scripts/player_v2.gd"]
+  },
+  {
+    "mistake": "Z-index layering problems",
+    "details": "Old placeholder visuals covering new warrior sprites",
+    "fix": "Added warrior.z_index = 10 and move_child to top of visuals",
+    "files_affected": ["scripts/player_v2.gd"]
+  },
+  {
+    "mistake": "Facing flicker when characters close",
+    "details": "Rapid flipping back and forth when fighters overlap",
+    "fix": "Added FACING_DEADZONE = 10.0 pixels to prevent jitter",
+    "files_affected": ["scripts/player_v2.gd"]
+  }
+]
