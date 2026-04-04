@@ -38,14 +38,14 @@ const FAST_FALL_SPEED: float = 1600.0       # Fast fall multiplier
 const FAST_FALL_GRAVITY_MULT: float = 1.8   # Extra gravity when fast falling
 
 # --- LANDING RECOVERY ---
-const LANDING_LAG_FRAMES: int = 2           # Was 4 frames, now 2 (33ms vs 67ms)
+const LANDING_LAG_FRAMES: int = 4           # RESTORED: 4 frames (67ms) for proper landing feedback
 
 # --- COYOTE TIME & BUFFERING ---
 const COYOTE_TIME: float = 0.08               # 5 frames after leaving ground
-const JUMP_BUFFER_TIME: float = 0.10          # 6 frames before landing
+const JUMP_BUFFER_TIME: float = 0.15            # INCREASED: 9 frames for more forgiving jumps
 
 # --- ATTACK TUNING ---
-const ATTACK_BUFFER_TIME: float = 0.08
+const ATTACK_BUFFER_TIME: float = 0.12          # INCREASED: 7 frames for more responsive attacks
 const JAB_STARTUP_FRAMES: int = 2
 const VISUAL_FLASH_DURATION: float = 0.05
 
@@ -717,24 +717,31 @@ func process_attack(delta):
 		end_attack()
 		return
 	
-	var startup_time = current_attack.startup_frames / 60.0
-	var active_start = startup_time
-	var active_end = startup_time + (current_attack.active_frames / 60.0)
-	var total_time = current_attack.get_total_duration()
+	# SYNC: Match hitbox timing to animation frames
+	# Animation: 4 frames @ 14fps = ~0.286s total
+	# Frame 0: Windup (0-0.071s)
+	# Frame 1-2: Active hit (0.071-0.214s) <- HITBOX ACTIVE HERE
+	# Frame 3: Recovery (0.214-0.286s)
 	
-	# Activate hitbox during active frames
-	if attack_timer >= active_start and attack_timer < active_end:
+	var anim_frame_time = 1.0 / 14.0  # ~0.071s per frame
+	
+	# Activate hitbox during frames 1-2 (the swing)
+	if attack_timer >= anim_frame_time and attack_timer < (anim_frame_time * 3.0):
 		if not hitbox_active:
 			activate_hitbox()
-	elif attack_timer >= active_end:
-		deactivate_hitbox()
+			print("Player ", player_id, ": HITBOX ACTIVE (anim frames 1-2)")
+	elif attack_timer >= (anim_frame_time * 3.0):
+		if hitbox_active:
+			deactivate_hitbox()
+			print("Player ", player_id, ": HITBOX DEACTIVATED (anim frame 3+)")
 	
-	# End attack
+	# End attack when animation finishes
+	var total_time = anim_frame_time * 4.0  # 4 frames total
 	if attack_timer >= total_time:
 		end_attack()
 		return
 	
-	# Slow gravity during attack
+	# Slow gravity during attack for better control
 	velocity.y += GRAVITY * delta * 0.3
 	velocity.x *= 0.9
 	move_and_slide()
@@ -818,10 +825,9 @@ func _on_hitbox_area_entered(area):
 	
 	# Apply hit
 	if target.has_method("take_damage"):
-		# Hit pause effect
-		Engine.time_scale = 0.05
-		await get_tree().create_timer(0.05).timeout
-		Engine.time_scale = 1.0
+		# Hit pause effect - simplified, no await to prevent state conflicts
+		Engine.time_scale = 0.1
+		target.get_tree().create_timer(0.06).timeout.connect(func(): Engine.time_scale = 1.0)
 		
 		target.take_damage(damage, kb, angle, self)
 		create_hit_effect(area.global_position)
