@@ -215,7 +215,7 @@ func setup_3d_model() -> void:
 	warrior.name = "WarriorSprites"
 	warrior.set_script(warrior_script)
 	warrior.warrior_color = "blue" if player_id == 1 else "red"
-	warrior.sprite_scale = 1.5
+	warrior.sprite_scale = 2.5  # Increased from 1.5 for better visibility
 	warrior.z_index = 10  # Make sure warrior is on top
 	visuals.add_child(warrior)
 	
