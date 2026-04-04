@@ -182,8 +182,14 @@ func _ready():
 	# Setup shield visuals
 	setup_shield()
 	
-	facing_right = (player_id == 2)
+	# DEBUG: Set initial facing based on player position
+	# P1 starts on left (should face right), P2 starts on right (should face left)
+	facing_right = (player_id == 1)
+	print("Player ", player_id, ": Initial facing set to ", facing_right, " (P1 right, P2 left)")
+	
+	# Force facing update now and queue another after opponent is found
 	update_facing()
+	call_deferred("force_facing_check")
 
 func find_opponent() -> void:
 	# 1V1: Find the other player node
@@ -197,38 +203,47 @@ func find_opponent() -> void:
 	print("Warning: Player ", player_id, " could not find opponent!")
 
 func setup_3d_model() -> void:
-	"""Setup Tiny Swords warrior sprites using runtime loading"""
+	"""Setup Tiny Swords warrior sprites using runtime loading - NO AWAIT to prevent duplicates"""
 	
-	# Remove ALL existing warrior sprites (prevents duplicates on reload)
-	# Use call_deferred to avoid async issues
+	# DEBUG: Log current children before cleanup
+	print("Player ", player_id, ": Visuals children BEFORE cleanup: ", visuals.get_children().size())
+	
+	# Remove ALL existing warrior sprites - simple immediate removal, no async
+	var removed_count = 0
 	for child in visuals.get_children():
 		if child.name == "WarriorSprites":
+			print("Player ", player_id, ": REMOVING old WarriorSprites")
 			child.queue_free()
+			removed_count += 1
 	
-	# Hide old placeholder visuals (keep for compatibility but hide)
+	if removed_count > 0:
+		print("Player ", player_id, ": Removed ", removed_count, " old WarriorSprites nodes")
+	
+	# CRITICAL: Hide ALL old placeholder visuals (Body, EyeLeft, EyeRight ColorRects)
 	for child in visuals.get_children():
-		child.visible = false
+		if child.name != "WarriorSprites":
+			child.visible = false
+			child.z_index = -10  # Push far behind
+			# Extra: make transparent if ColorRect
+			if child is ColorRect:
+				var cr = child as ColorRect
+				cr.color.a = 0.0
+				print("Player ", player_id, ": HIDING old placeholder: ", child.name)
 	
-	# Add warrior sprite loader
+	# Create new warrior sprite
 	var warrior_script = load("res://scripts/warrior_sprite_loader.gd")
 	var warrior = Node2D.new()
 	warrior.name = "WarriorSprites"
 	warrior.set_script(warrior_script)
 	warrior.warrior_color = "blue" if player_id == 1 else "red"
-	warrior.sprite_scale = 1.5  # Reduced from 2.5 for better fit
-	warrior.z_index = 10  # Make sure warrior is on top
+	warrior.sprite_scale = 1.5
+	warrior.z_index = 100
 	visuals.add_child(warrior)
 	
-	# Move warrior to top of visuals
+	# Move to top
 	visuals.move_child(warrior, visuals.get_child_count() - 1)
 	
-	# Hide old placeholder visuals AFTER adding warrior
-	for child in visuals.get_children():
-		if child.name != "WarriorSprites":
-			child.visible = false
-			child.z_index = -1  # Push old visuals behind
-	
-	print("Player ", player_id, ": Warrior sprites setup complete")
+	print("Player ", player_id, ": Single WarriorSprites instance created")
 
 func setup_shield() -> void:
 	"""Create visual shield effect - scaled for new sprite size"""
@@ -1072,6 +1087,16 @@ func update_facing():
 	var warrior = visuals.get_node_or_null("WarriorSprites")
 	if warrior and warrior.has_method("set_facing_right"):
 		warrior.set_facing_right(facing_right)
+
+func force_facing_check() -> void:
+	"""Force facing update after opponent is found - ensures correct initial facing"""
+	if opponent:
+		var distance = opponent.position.x - position.x
+		var should_face_right = distance > 0
+		if facing_right != should_face_right:
+			print("Player ", player_id, ": FORCE FACING CORRECTION to ", should_face_right)
+			facing_right = should_face_right
+			update_facing()
 
 # === INPUT FUNCTIONS ===
 func get_input_x() -> float:
