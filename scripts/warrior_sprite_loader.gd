@@ -35,8 +35,9 @@ func load_warrior_sprites():
 	# Load Run animation  
 	load_animation_from_sheet(base_path + "Warrior_Run.png", "run", 6, 12.0)
 	
-	# Load Attack animation
-	load_animation_from_sheet(base_path + "Warrior_Attack1.png", "attack", 4, 10.0)
+	# Load Attack animation - faster speed to match hitbox timing (4 frames in ~17 frames at 60fps)
+	# Attack animation: Frame 1 = windup, Frame 2-3 = swing/hit, Frame 4 = recovery
+	load_animation_from_sheet(base_path + "Warrior_Attack1.png", "attack", 4, 14.0)  # ~0.28s to match attack duration
 	
 	# Load Guard animation (for shield)
 	load_animation_from_sheet(base_path + "Warrior_Guard.png", "guard", 3, 6.0)
@@ -87,19 +88,27 @@ func load_animation_from_sheet(image_path: String, anim_name: String, frame_coun
 
 func play_idle():
 	if animated_sprite and animated_sprite.animation != "idle":
+		var current_flip = animated_sprite.flip_h
 		animated_sprite.play("idle")
+		animated_sprite.flip_h = current_flip  # Preserve facing
 
 func play_run():
 	if animated_sprite and animated_sprite.animation != "run":
+		var current_flip = animated_sprite.flip_h
 		animated_sprite.play("run")
+		animated_sprite.flip_h = current_flip  # Preserve facing
 
 func play_attack():
 	if animated_sprite:
+		var current_flip = animated_sprite.flip_h
 		animated_sprite.play("attack")
+		animated_sprite.flip_h = current_flip  # Preserve facing
 
 func play_guard():
 	if animated_sprite and animated_sprite.animation != "guard":
+		var current_flip = animated_sprite.flip_h
 		animated_sprite.play("guard")
+		animated_sprite.flip_h = current_flip  # Preserve facing
 
 func set_facing_right(facing_right: bool):
 	if animated_sprite:
