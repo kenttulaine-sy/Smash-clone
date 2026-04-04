@@ -199,22 +199,25 @@ func find_opponent() -> void:
 func setup_3d_model() -> void:
 	"""Setup Tiny Swords warrior sprites using runtime loading"""
 	
-	# Remove any existing warrior sprites (prevents duplicates)
-	var existing = visuals.get_node_or_null("WarriorSprites")
-	if existing:
-		existing.queue_free()
+	# Remove ALL existing warrior sprites (prevents duplicates on reload)
+	while visuals.has_node("WarriorSprites"):
+		var existing = visuals.get_node("WarriorSprites")
+		if existing:
+			existing.queue_free()
+			await get_tree().process_frame  # Wait for actual deletion
 	
-	# Hide old placeholder visuals
+	# Hide old placeholder visuals (keep for compatibility but hide)
 	for child in visuals.get_children():
-		child.visible = false
+		if child.name != "WarriorSprites":
+			child.visible = false
 	
-	# Add warrior sprite loader with proper scale
+	# Add warrior sprite loader
 	var warrior_script = load("res://scripts/warrior_sprite_loader.gd")
 	var warrior = Node2D.new()
 	warrior.name = "WarriorSprites"
 	warrior.set_script(warrior_script)
 	warrior.warrior_color = "blue" if player_id == 1 else "red"
-	warrior.sprite_scale = 1.5  # Reduced from 3.0 - proper size for platformer
+	warrior.sprite_scale = 1.5
 	visuals.add_child(warrior)
 	
 	print("Player ", player_id, ": Warrior sprites loading...")
