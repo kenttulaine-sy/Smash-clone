@@ -1027,11 +1027,27 @@ func apply_gravity(delta):
 	velocity.y += gravity * delta
 	velocity.y = min(velocity.y, MAX_FALL_SPEED if not is_fast_falling else FAST_FALL_SPEED)
 
+const FACING_DEADZONE: float = 10.0  # pixels - don't flip when fighters are this close (prevents jitter)
+
 func update_facing():
+	# DEBUG: Log facing update
+	var old_facing = facing_right
+	
 	# Face opponent if we have one, otherwise face movement direction
 	if opponent:
-		# Face toward opponent (P1 on left faces right, P2 on right faces left initially)
-		facing_right = (opponent.position.x > position.x)
+		var distance_to_opponent = opponent.position.x - position.x
+		
+		# DEBUG: Log position comparison (disable in production)
+		# print("Player ", player_id, " distance: ", distance_to_opponent, " pos: ", position.x, " opp: ", opponent.position.x)
+		
+		# Deadzone: don't flip when very close to prevent flickering
+		if abs(distance_to_opponent) > FACING_DEADZONE:
+			# Face toward opponent
+			facing_right = distance_to_opponent > 0
+			# print("Player ", player_id, " facing change to: ", facing_right, " (outside deadzone)")
+		else:
+			# In deadzone, keep current facing
+			pass
 	else:
 		# Fall back to movement-based facing
 		if velocity.x > 30:
@@ -1039,10 +1055,14 @@ func update_facing():
 		elif velocity.x < -30:
 			facing_right = false
 	
+	# DEBUG: Log if facing changed
+	if old_facing != facing_right:
+		print("Player ", player_id, " FACING CHANGED: ", old_facing, " -> ", facing_right)
+	
 	# Update 2D visuals (hidden but kept for compatibility)
 	visuals.scale.x = 1 if facing_right else -1
 	
-	# Update warrior visuals
+	# Update warrior visuals - flip sprite based on facing direction
 	var warrior = visuals.get_node_or_null("WarriorSprites")
 	if warrior and warrior.has_method("set_facing_right"):
 		warrior.set_facing_right(facing_right)
