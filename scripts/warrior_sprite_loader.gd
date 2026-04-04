@@ -15,7 +15,20 @@ func _ready():
 	load_warrior_sprites()
 
 func create_animated_sprite():
-	"""Create the AnimatedSprite2D node"""
+	"""Create the AnimatedSprite2D node - only if not already exists"""
+	# Prevent duplicate sprites - check if already created
+	if animated_sprite != null and is_instance_valid(animated_sprite):
+		print("WarriorSpriteLoader: AnimatedSprite2D already exists, skipping creation")
+		return
+	
+	# Also check if child already exists from previous initialization
+	var existing = get_node_or_null("AnimatedSprite2D")
+	if existing:
+		print("WarriorSpriteLoader: Found existing AnimatedSprite2D child, reusing")
+		animated_sprite = existing
+		sprite_frames = animated_sprite.frames
+		return
+	
 	animated_sprite = AnimatedSprite2D.new()
 	animated_sprite.name = "AnimatedSprite2D"
 	animated_sprite.scale = Vector2(sprite_scale, sprite_scale)
@@ -24,6 +37,8 @@ func create_animated_sprite():
 	
 	sprite_frames = SpriteFrames.new()
 	animated_sprite.frames = sprite_frames
+	
+	print("WarriorSpriteLoader: Created new AnimatedSprite2D")
 
 func load_warrior_sprites():
 	"""Load PNG files at runtime and create animations"""
