@@ -50,9 +50,16 @@ func _process(delta: float) -> void:
 	var direction = sign(target.global_position.x - player.global_position.x)
 	var height_diff = target.global_position.y - player.global_position.y
 	
-	# Face target
-	if direction != 0:
-		player.facing_right = direction > 0
+	# Face target - use player's update_facing() instead of setting directly
+	# This preserves deadzone logic and prevents flicker
+	if direction != 0 and player.has_method("update_facing"):
+		# Only update if we're outside deadzone (prevents jitter)
+		var distance_to_target = target.global_position.x - player.global_position.x
+		if abs(distance_to_target) > 10.0:  # 10px deadzone
+			var should_face_right = distance_to_target > 0
+			if player.facing_right != should_face_right:
+				player.facing_right = should_face_right
+				player.update_facing()  # Call proper facing update
 	
 	# Jump if target is significantly above and close
 	if height_diff < -80 and jump_cooldown <= 0 and distance < JUMP_RANGE:
